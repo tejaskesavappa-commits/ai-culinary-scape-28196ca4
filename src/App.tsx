@@ -20,7 +20,6 @@ import RestaurantRegistration from "./pages/RestaurantRegistration";
 import RestaurantLogin from "./pages/RestaurantLogin";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import NotFound from "./pages/NotFound";
-import QuickOrderHome from "./pages/QuickOrderHome";
 
 const queryClient = new QueryClient();
 
@@ -47,7 +46,6 @@ const App = () => (
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/quick-order" element={<QuickOrderHome />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
