@@ -1,1 +1,4 @@
 project_id = "nsbytsrwtokhfrbhwoph"
+
+[functions.notify-restaurant-registration]
+verify_jwt = true
