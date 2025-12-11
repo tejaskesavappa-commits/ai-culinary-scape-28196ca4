@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Clock, Star, Utensils, Truck, ChefHat, Store } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -21,8 +21,15 @@ interface ApprovedRestaurant {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [approvedRestaurants, setApprovedRestaurants] = useState<ApprovedRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchAddress, setSearchAddress] = useState('');
+
+  const handleSearch = () => {
+    // Navigate to quick-order page which shows all restaurants
+    navigate('/quick-order');
+  };
 
   useEffect(() => {
     const fetchApprovedRestaurants = async () => {
@@ -68,9 +75,12 @@ const Index = () => {
               <Input
                 placeholder="Enter your delivery address"
                 className="pl-10 h-12 bg-card border-border"
+                value={searchAddress}
+                onChange={(e) => setSearchAddress(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button variant="hero" size="lg" className="h-12 px-8">
+            <Button variant="hero" size="lg" className="h-12 px-8" onClick={handleSearch}>
               <Search className="h-5 w-5 mr-2" />
               Find Food
             </Button>
