@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { RestaurantCard } from '../components/RestaurantCard';
+import FoodRecommendations from '../components/FoodRecommendations';
 import { restaurants } from '../data/restaurants';
 import { supabase } from '@/integrations/supabase/client';
 import heroImage from '../assets/hero-food.jpg';
@@ -96,6 +97,13 @@ const Index = () => {
               <span>4.5+ rated</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* AI Food Recommendations */}
+      <section className="py-16 px-4 bg-muted/20">
+        <div className="container mx-auto">
+          <FoodRecommendations />
         </div>
       </section>
 
