@@ -7,6 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { RestaurantCard } from '../components/RestaurantCard';
 import FoodRecommendations from '../components/FoodRecommendations';
+import MoodFoodScanner from '../components/MoodFoodScanner';
 import { restaurants } from '../data/restaurants';
 import { supabase } from '@/integrations/supabase/client';
 import heroImage from '../assets/hero-food.jpg';
@@ -97,6 +98,13 @@ const Index = () => {
               <span>4.5+ rated</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Mood Food Scanner */}
+      <section className="py-16 px-4 bg-gradient-to-br from-primary/5 to-accent/5">
+        <div className="container mx-auto max-w-2xl">
+          <MoodFoodScanner />
         </div>
       </section>
 

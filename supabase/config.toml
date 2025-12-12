@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.food-recommendations]
 verify_jwt = false
+
+[functions.mood-food-analyzer]
+verify_jwt = false
