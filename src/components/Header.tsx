@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, Search, LogOut, Truck, Package, Store } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,7 +10,11 @@ export const Header: React.FC = () => {
   const { cart } = useProducts();
   const { user, profile, signOut, checkRole, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDeliveryPartner, setIsDeliveryPartner] = React.useState(false);
+
+  // Check if we're on the restaurant dashboard
+  const isRestaurantDashboard = location.pathname === '/restaurant-dashboard';
 
   React.useEffect(() => {
     if (user) {
@@ -23,12 +27,23 @@ export const Header: React.FC = () => {
     navigate('/');
   };
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    // Prevent navigation on restaurant dashboard
+    if (isRestaurantDashboard) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border shadow-elegant">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link 
+            to={isRestaurantDashboard ? "#" : "/"} 
+            className="flex items-center space-x-2"
+            onClick={handleLogoClick}
+          >
             <div className="text-2xl font-bold bg-hero-gradient bg-clip-text text-transparent">
               FOODIEXPRESS
             </div>
@@ -89,17 +104,19 @@ export const Header: React.FC = () => {
               </Link>
             </div>
 
-            {/* Cart */}
-            <Link to="/checkout">
-              <Button variant="ghost" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cart.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground rounded-full h-5 w-5 text-xs flex items-center justify-center animate-glow">
-                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                  </span>
-                )}
-              </Button>
-            </Link>
+            {/* Cart - hidden on restaurant dashboard */}
+            {!isRestaurantDashboard && (
+              <Link to="/checkout">
+                <Button variant="ghost" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cart.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground rounded-full h-5 w-5 text-xs flex items-center justify-center animate-glow">
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
 
             {/* User actions */}
             {user ? (
