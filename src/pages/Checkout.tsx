@@ -121,13 +121,11 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create restaurant order items (using the new table for non-UUID menu item IDs)
+      // Create order items for tracking
       const orderItems = cart.map(item => ({
         order_id: order.id,
         menu_item_id: item.id,
         menu_item_name: item.name,
-        restaurant_id: (item as any).restaurantId || 'store',
-        restaurant_name: (item as any).restaurantName || 'Store',
         quantity: item.quantity,
         price: Number(item.price),
         is_veg: (item as any).isVeg || false,
@@ -261,13 +259,11 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create restaurant order items
+      // Create order items for tracking
       const orderItems = cart.map(item => ({
         order_id: order.id,
         menu_item_id: item.id,
         menu_item_name: item.name,
-        restaurant_id: (item as any).restaurantId || 'store',
-        restaurant_name: (item as any).restaurantName || 'Store',
         quantity: item.quantity,
         price: Number(item.price),
         is_veg: (item as any).isVeg || false,
