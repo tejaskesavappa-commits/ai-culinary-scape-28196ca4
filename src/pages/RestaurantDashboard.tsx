@@ -50,7 +50,7 @@ interface Order {
 }
 
 const RestaurantDashboard: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading, isRestaurantOwner } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -80,12 +80,14 @@ const RestaurantDashboard: React.FC = () => {
   ];
 
   useEffect(() => {
-    if (!user) {
+    if (authLoading) return;
+
+    if (!user || !isRestaurantOwner) {
       navigate('/restaurant-login');
       return;
     }
     fetchRestaurantData();
-  }, [user, navigate]);
+  }, [user, authLoading, isRestaurantOwner, navigate]);
 
   const fetchRestaurantData = async () => {
     try {

@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isRestaurantOwner: boolean;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -23,6 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isRestaurantOwner, setIsRestaurantOwner] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -56,6 +58,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const checkRestaurantOwnership = async (userId: string, email?: string | null) => {
+    try {
+      if (!email) {
+        setIsRestaurantOwner(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsRestaurantOwner(!!data);
+    } catch (error) {
+      console.error('Error checking restaurant ownership:', error);
+      setIsRestaurantOwner(false);
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -66,10 +89,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setTimeout(() => {
             fetchProfile(session.user.id);
             checkUserRole(session.user.id);
+            checkRestaurantOwnership(session.user.id, session.user.email);
           }, 0);
         } else {
           setProfile(null);
           setIsAdmin(false);
+          setIsRestaurantOwner(false);
         }
       }
     );
@@ -81,6 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (session?.user) {
         fetchProfile(session.user.id);
         checkUserRole(session.user.id);
+        checkRestaurantOwnership(session.user.id, session.user.email);
       }
       setLoading(false);
     });
@@ -172,7 +198,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       signUp, 
       signIn, 
       signOut, 
-      checkRole 
+      checkRole,
+      isRestaurantOwner,
     }}>
       {children}
     </AuthContext.Provider>

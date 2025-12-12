@@ -10,13 +10,15 @@ import { format, formatDistanceToNow, isPast } from 'date-fns';
 import OrderTracking from '@/components/OrderTracking';
 
 const Orders = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<(Order & { order_items: OrderItem[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (!user) {
       navigate('/login');
       return;
@@ -44,9 +46,11 @@ const Orders = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const fetchOrders = async () => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -57,7 +61,7 @@ const Orders = () => {
             product:products (*)
           )
         `)
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

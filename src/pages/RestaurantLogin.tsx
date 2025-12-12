@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Store, Mail, Lock, Eye, EyeOff, ChefHat } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const RestaurantLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -30,6 +31,23 @@ const RestaurantLogin: React.FC = () => {
 
     try {
       await signIn(email, password);
+
+      const { data: restaurant, error } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (error || !restaurant) {
+        toast({
+          title: "Restaurant not found",
+          description: "This account is not linked to a restaurant. Please register first.",
+          variant: "destructive",
+        });
+        navigate('/register-restaurant');
+        return;
+      }
+
       toast({
         title: "Welcome back!",
         description: "Successfully logged in to your restaurant dashboard",
