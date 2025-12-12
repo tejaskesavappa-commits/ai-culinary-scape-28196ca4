@@ -40,6 +40,30 @@ const Restaurant: React.FC = () => {
   const [nonVegOnly, setNonVegOnly] = useState(false);
   const { cart } = useCart();
 
+  const fetchMenuItems = async (restaurantId: string) => {
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .eq('is_available', true);
+    
+    if (menuError) {
+      console.error('Error fetching menu items:', menuError);
+      return [];
+    }
+    
+    return (menuItems || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      price: item.price,
+      image: item.image_url || '',
+      category: item.category,
+      isVeg: item.is_veg ?? true,
+      isAlcoholic: item.is_alcoholic ?? false
+    }));
+  };
+
   useEffect(() => {
     const fetchRestaurant = async () => {
       if (!id) return;
@@ -88,14 +112,7 @@ const Restaurant: React.FC = () => {
           return;
         }
         
-        // Fetch menu items for this restaurant
-        const { data: menuItems, error: menuError } = await supabase
-          .from('menu_items')
-          .select('*')
-          .eq('restaurant_id', id)
-          .eq('is_available', true);
-        
-        if (menuError) throw menuError;
+        const menuItems = await fetchMenuItems(id);
         
         setRestaurant({
           id: restaurantData.id,
@@ -105,16 +122,7 @@ const Restaurant: React.FC = () => {
           deliveryTime: restaurantData.avg_delivery_time,
           image: restaurantData.image_url || '',
           description: restaurantData.description,
-          menu: (menuItems || []).map(item => ({
-            id: item.id,
-            name: item.name,
-            description: item.description || '',
-            price: item.price,
-            image: item.image_url || '',
-            category: item.category,
-            isVeg: item.is_veg ?? true,
-            isAlcoholic: item.is_alcoholic ?? false
-          }))
+          menu: menuItems
         });
       } catch (error: any) {
         console.error('Error fetching restaurant:', error);
@@ -126,6 +134,33 @@ const Restaurant: React.FC = () => {
     };
     
     fetchRestaurant();
+  }, [id]);
+
+  // Real-time subscription for menu updates
+  useEffect(() => {
+    if (!id || staticRestaurants.find(r => r.id === id)) return;
+    
+    const channel = supabase
+      .channel('menu-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_items',
+          filter: `restaurant_id=eq.${id}`
+        },
+        async () => {
+          // Refetch menu items when any change occurs
+          const menuItems = await fetchMenuItems(id);
+          setRestaurant(prev => prev ? { ...prev, menu: menuItems } : null);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   if (loading) {
