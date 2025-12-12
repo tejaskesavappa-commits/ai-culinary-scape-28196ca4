@@ -34,6 +34,11 @@ const checkoutSchema = z.object({
 
 type PaymentOption = 'upi' | 'qr' | 'cod' | 'netbanking';
 
+const isUuid = (value: string): boolean => {
+  // Basic UUID v4 format check
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
+};
+
 const Checkout = () => {
   const { cart, updateCartQuantity, removeFromCart, getCartTotal, clearCart } = useProducts();
   const { user, profile, loading: authLoading } = useAuth();
@@ -121,17 +126,21 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items for tracking
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        menu_item_id: item.id,
-        menu_item_name: item.name,
-        quantity: item.quantity,
-        price: Number(item.price),
-        is_veg: (item as any).isVeg || false,
-      }));
+      // Create order items only for valid UUID-based menu items
+      const orderItems = cart
+        .filter(item => isUuid(String(item.id)))
+        .map(item => ({
+          order_id: order.id,
+          menu_item_id: item.id,
+          menu_item_name: item.name,
+          quantity: item.quantity,
+          price: Number(item.price),
+          is_veg: (item as any).isVeg || false,
+        }));
 
-      await supabase.from('restaurant_order_items').insert(orderItems);
+      if (orderItems.length > 0) {
+        await supabase.from('restaurant_order_items').insert(orderItems);
+      }
 
       // Create initial order status history
       await supabase.from('order_status_history').insert([{
@@ -259,21 +268,25 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items for tracking
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        menu_item_id: item.id,
-        menu_item_name: item.name,
-        quantity: item.quantity,
-        price: Number(item.price),
-        is_veg: (item as any).isVeg || false,
-      }));
+      // Create order items only for valid UUID-based menu items
+      const orderItems = cart
+        .filter(item => isUuid(String(item.id)))
+        .map(item => ({
+          order_id: order.id,
+          menu_item_id: item.id,
+          menu_item_name: item.name,
+          quantity: item.quantity,
+          price: Number(item.price),
+          is_veg: (item as any).isVeg || false,
+        }));
 
-      const { error: itemsError } = await supabase
-        .from('restaurant_order_items')
-        .insert(orderItems);
+      if (orderItems.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('restaurant_order_items')
+          .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+        if (itemsError) throw itemsError;
+      }
 
       // Create initial order status history
       await supabase
