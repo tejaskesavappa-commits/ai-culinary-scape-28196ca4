@@ -119,17 +119,35 @@ const RestaurantDashboard: React.FC = () => {
 
       setRestaurant(restaurantData);
       
-      // Load mock menu items for demo (in production, fetch from DB)
-      const mockMenuItems: MenuItem[] = [
-        { id: '1', name: 'Butter Chicken', description: 'Creamy tomato curry with tender chicken', price: 350, category: 'Main Course', isVeg: false, isAvailable: true },
-        { id: '2', name: 'Paneer Tikka', description: 'Grilled cottage cheese with spices', price: 280, category: 'Starters', isVeg: true, isAvailable: true },
-        { id: '3', name: 'Chicken Biryani', description: 'Fragrant rice with spiced chicken', price: 320, category: 'Biryani & Rice', isVeg: false, isAvailable: true },
-        { id: '4', name: 'Dal Makhani', description: 'Creamy black lentils', price: 220, category: 'Main Course', isVeg: true, isAvailable: true },
-        { id: '5', name: 'Gulab Jamun', description: 'Sweet milk dumplings in syrup', price: 120, category: 'Desserts', isVeg: true, isAvailable: true },
-      ];
-      setMenuItems(mockMenuItems);
+      // Fetch menu items from backend
+      const { data: menuData, error: menuError } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('restaurant_id', restaurantData.id)
+        .order('created_at', { ascending: true });
 
-      // Load mock orders for demo
+      if (menuError) {
+        console.error('Error fetching menu items:', menuError);
+        toast({
+          title: "Error",
+          description: "Failed to load menu items. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        const mappedMenu: MenuItem[] = (menuData || []).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          price: Number(item.price),
+          category: item.category,
+          isVeg: item.is_veg ?? true,
+          isAvailable: item.is_available ?? true,
+          image: item.image_url || undefined,
+        }));
+        setMenuItems(mappedMenu);
+      }
+
+      // Load mock orders for demo (these are not yet backed by the backend)
       const mockOrders: Order[] = [
         {
           id: 'ORD001',
@@ -167,7 +185,16 @@ const RestaurantDashboard: React.FC = () => {
     }
   };
 
-  const handleAddMenuItem = () => {
+  const handleAddMenuItem = async () => {
+    if (!restaurant) {
+      toast({
+        title: "Error",
+        description: "Restaurant not loaded. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!newItem.name || !newItem.price) {
       toast({
         title: "Error",
@@ -177,63 +204,179 @@ const RestaurantDashboard: React.FC = () => {
       return;
     }
 
-    const item: MenuItem = {
-      id: Date.now().toString(),
-      name: newItem.name!,
-      description: newItem.description || '',
-      price: newItem.price!,
-      category: newItem.category || 'Main Course',
-      isVeg: newItem.isVeg ?? true,
-      isAvailable: newItem.isAvailable ?? true,
-    };
+    try {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .insert({
+          name: newItem.name!,
+          description: newItem.description || '',
+          price: newItem.price!,
+          category: newItem.category || 'Main Course',
+          is_veg: newItem.isVeg ?? true,
+          is_available: newItem.isAvailable ?? true,
+          restaurant_id: restaurant.id,
+        })
+        .select('*')
+        .single();
 
-    setMenuItems([...menuItems, item]);
-    setNewItem({
-      name: '',
-      description: '',
-      price: 0,
-      category: 'Main Course',
-      isVeg: true,
-      isAvailable: true,
-    });
-    setIsAddingItem(false);
-    
-    toast({
-      title: "Item Added",
-      description: `${item.name} has been added to your menu`,
-    });
+      if (error) throw error;
+
+      const createdItem: MenuItem = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        price: Number(data.price),
+        category: data.category,
+        isVeg: data.is_veg ?? true,
+        isAvailable: data.is_available ?? true,
+        image: data.image_url || undefined,
+      };
+
+      setMenuItems([...menuItems, createdItem]);
+      setNewItem({
+        name: '',
+        description: '',
+        price: 0,
+        category: 'Main Course',
+        isVeg: true,
+        isAvailable: true,
+      });
+      setIsAddingItem(false);
+      
+      toast({
+        title: "Item Added",
+        description: `${createdItem.name} has been added to your menu`,
+      });
+    } catch (error: any) {
+      console.error('Error adding menu item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add menu item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateMenuItem = () => {
-    if (!editingItem) return;
+  const handleUpdateMenuItem = async () => {
+    if (!editingItem || !restaurant) return;
 
-    setMenuItems(menuItems.map(item => 
-      item.id === editingItem.id ? editingItem : item
-    ));
-    setEditingItem(null);
-    
-    toast({
-      title: "Item Updated",
-      description: `${editingItem.name} has been updated`,
-    });
+    try {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .update({
+          name: editingItem.name,
+          description: editingItem.description,
+          price: editingItem.price,
+          category: editingItem.category,
+          is_veg: editingItem.isVeg,
+          is_available: editingItem.isAvailable,
+        })
+        .eq('id', editingItem.id)
+        .eq('restaurant_id', restaurant.id)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const updatedItem: MenuItem = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        price: Number(data.price),
+        category: data.category,
+        isVeg: data.is_veg ?? true,
+        isAvailable: data.is_available ?? true,
+        image: data.image_url || undefined,
+      };
+
+      setMenuItems(menuItems.map(item => 
+        item.id === updatedItem.id ? updatedItem : item
+      ));
+      setEditingItem(null);
+      
+      toast({
+        title: "Item Updated",
+        description: `${updatedItem.name} has been updated`,
+      });
+    } catch (error: any) {
+      console.error('Error updating menu item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update menu item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteMenuItem = (id: string) => {
+  const handleDeleteMenuItem = async (id: string) => {
     const item = menuItems.find(i => i.id === id);
-    setMenuItems(menuItems.filter(i => i.id !== id));
-    
-    toast({
-      title: "Item Deleted",
-      description: `${item?.name} has been removed from your menu`,
-    });
+
+    if (!restaurant) return;
+
+    try {
+      const { error } = await supabase
+        .from('menu_items')
+        .delete()
+        .eq('id', id)
+        .eq('restaurant_id', restaurant.id);
+
+      if (error) throw error;
+
+      setMenuItems(menuItems.filter(i => i.id !== id));
+      
+      toast({
+        title: "Item Deleted",
+        description: `${item?.name} has been removed from your menu`,
+      });
+    } catch (error: any) {
+      console.error('Error deleting menu item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete menu item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleToggleAvailability = (id: string) => {
-    setMenuItems(menuItems.map(item => 
-      item.id === id ? { ...item, isAvailable: !item.isAvailable } : item
+  const handleToggleAvailability = async (id: string) => {
+    if (!restaurant) return;
+
+    const item = menuItems.find(i => i.id === id);
+    if (!item) return;
+
+    const newAvailability = !item.isAvailable;
+
+    // Optimistically update UI
+    setMenuItems(menuItems.map(menuItem => 
+      menuItem.id === id ? { ...menuItem, isAvailable: newAvailability } : menuItem
     ));
-  };
 
+    try {
+      const { error } = await supabase
+        .from('menu_items')
+        .update({ is_available: newAvailability })
+        .eq('id', id)
+        .eq('restaurant_id', restaurant.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Availability Updated",
+        description: `${item.name} is now ${newAvailability ? 'available' : 'unavailable'}`,
+      });
+    } catch (error: any) {
+      console.error('Error updating availability:', error);
+      // Revert optimistic update on error
+      setMenuItems(menuItems.map(menuItem => 
+        menuItem.id === id ? { ...menuItem, isAvailable: item.isAvailable } : menuItem
+      ));
+      toast({
+        title: "Error",
+        description: "Failed to update availability. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   const handleOrderAction = (orderId: string, action: 'accept' | 'decline' | 'preparing' | 'ready') => {
     setOrders(orders.map(order => {
       if (order.id === orderId) {
