@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import LampLogin from '../components/LampLogin';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -26,7 +27,23 @@ const Login: React.FC = () => {
 
     try {
       await signIn(email, password);
-      navigate('/');
+
+      // After login, check if this user is a restaurant owner
+      const { data: restaurant, error } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (!error && restaurant) {
+        toast({
+          title: "Restaurant account detected",
+          description: "Please use the Restaurant Login to access your dashboard.",
+        });
+        navigate('/restaurant-dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       // Error is already handled by AuthContext with toast
     }
