@@ -528,6 +528,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_restaurants: {
+        Args: never
+        Returns: {
+          address: string
+          avg_delivery_time: string
+          closing_time: string
+          created_at: string
+          cuisine_type: string
+          description: string
+          id: string
+          image_url: string
+          is_approved: boolean
+          name: string
+          opening_time: string
+          rating: number
+          updated_at: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {

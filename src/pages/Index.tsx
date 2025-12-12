@@ -35,14 +35,16 @@ const Index = () => {
 
   useEffect(() => {
     const fetchApprovedRestaurants = async () => {
+      // Use secure RPC function that excludes sensitive data (email, phone, approval_token)
       const { data, error } = await supabase
-        .from('restaurants')
-        .select('id, name, cuisine_type, rating, avg_delivery_time, image_url, description')
-        .eq('is_approved', true)
-        .order('created_at', { ascending: false });
+        .rpc('get_public_restaurants');
 
       if (!error && data) {
-        setApprovedRestaurants(data);
+        // Sort by created_at descending (most recent first)
+        const sorted = [...data].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setApprovedRestaurants(sorted);
       }
       setLoading(false);
     };
