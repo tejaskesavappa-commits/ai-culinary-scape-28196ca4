@@ -127,7 +127,7 @@ const RestaurantRegistration: React.FC = () => {
         throw new Error('Failed to submit registration');
       }
 
-      // Also save to Supabase for tracking
+      // Also save to Supabase for tracking - auto-approve so restaurants appear immediately
       const { error: insertError } = await supabase
         .from('restaurants')
         .insert({
@@ -141,7 +141,7 @@ const RestaurantRegistration: React.FC = () => {
           opening_time: data.openingTime,
           closing_time: data.closingTime,
           avg_delivery_time: data.avgDeliveryTime,
-          is_approved: false,
+          is_approved: true,
         });
 
       if (insertError) {
@@ -150,8 +150,8 @@ const RestaurantRegistration: React.FC = () => {
       }
       
       toast({
-        title: 'Registration Submitted!',
-        description: 'Please check your email to confirm your account. Your restaurant will be reviewed by admin.',
+        title: 'Registration Successful!',
+        description: 'Your restaurant is now live! Customers can start ordering.',
       });
       
       navigate('/');
