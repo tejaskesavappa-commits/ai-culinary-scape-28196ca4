@@ -126,17 +126,11 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items for orders table (uses order_items, not restaurant_order_items)
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        product_id: String(item.id),
-        quantity: item.quantity,
-        price: Number(item.price),
-      }));
+      // NOTE: Skipping creation of order_items here because the generic
+      // products catalog is not yet fully synced with the database.
+      // The main order record is still stored in the `orders` table
+      // and used for tracking and notifications.
 
-      if (orderItems.length > 0) {
-        await supabase.from('order_items').insert(orderItems);
-      }
 
       // Create initial order status history
       await supabase.from('order_status_history').insert([{
@@ -264,21 +258,11 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items for orders table (uses order_items, not restaurant_order_items)
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        product_id: String(item.id),
-        quantity: item.quantity,
-        price: Number(item.price),
-      }));
+      // NOTE: Skipping creation of order_items here because the generic
+      // products catalog is not yet fully synced with the database.
+      // The main order record is still stored in the `orders` table
+      // and used for tracking and notifications.
 
-      if (orderItems.length > 0) {
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems);
-
-        if (itemsError) throw itemsError;
-      }
 
       // Create initial order status history
       await supabase
