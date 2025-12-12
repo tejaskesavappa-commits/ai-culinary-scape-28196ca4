@@ -528,6 +528,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_delivery_partner_approximate_location: {
+        Args: { partner_id: string }
+        Returns: {
+          approximate_latitude: number
+          approximate_longitude: number
+        }[]
+      }
       get_public_restaurants: {
         Args: never
         Returns: {
