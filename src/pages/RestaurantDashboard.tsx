@@ -94,10 +94,20 @@ const RestaurantDashboard: React.FC = () => {
         .from('restaurants')
         .select('*')
         .eq('email', user?.email)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching restaurant:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load restaurant data. Please try again.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!restaurantData) {
         toast({
           title: "Access Denied",
           description: "No restaurant found for this account. Please register first.",
