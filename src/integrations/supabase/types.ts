@@ -528,6 +528,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delivery_partner_has_active_order_for_user: {
+        Args: { _partner_id: string; _user_id: string }
+        Returns: boolean
+      }
       get_delivery_partner_approximate_location: {
         Args: { partner_id: string }
         Returns: {
@@ -552,6 +556,10 @@ export type Database = {
           rating: number
           updated_at: string
         }[]
+      }
+      get_user_delivery_partner_id: {
+        Args: { _user_id: string }
+        Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
     }
