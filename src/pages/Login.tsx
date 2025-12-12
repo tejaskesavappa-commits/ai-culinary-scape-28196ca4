@@ -26,24 +26,26 @@ const Login: React.FC = () => {
     }
 
     try {
-      await signIn(email, password);
-
-      // After login, check if this user is a restaurant owner
-      const { data: restaurant, error } = await supabase
+      // First check if this is a restaurant owner trying to use customer login
+      const { data: restaurant } = await supabase
         .from('restaurants')
         .select('id')
         .eq('email', email)
         .maybeSingle();
 
-      if (!error && restaurant) {
+      if (restaurant) {
         toast({
-          title: "Restaurant account detected",
-          description: "Please use the Restaurant Login to access your dashboard.",
+          title: "Restaurant Account",
+          description: "This is a restaurant account. Please use the Restaurant Login instead.",
+          variant: "destructive",
         });
-        navigate('/restaurant-dashboard');
-      } else {
-        navigate('/');
+        navigate('/restaurant-login');
+        return;
       }
+
+      // Proceed with customer login
+      await signIn(email, password);
+      navigate('/');
     } catch (error) {
       // Error is already handled by AuthContext with toast
     }

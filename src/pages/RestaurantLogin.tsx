@@ -30,24 +30,24 @@ const RestaurantLogin: React.FC = () => {
     }
 
     try {
-      await signIn(email, password);
-
-      const { data: restaurant, error } = await supabase
+      // First check if this email belongs to a restaurant
+      const { data: restaurant, error: checkError } = await supabase
         .from('restaurants')
         .select('id')
         .eq('email', email)
         .maybeSingle();
 
-      if (error || !restaurant) {
+      if (checkError || !restaurant) {
         toast({
-          title: "Restaurant not found",
-          description: "This account is not linked to a restaurant. Please register first.",
+          title: "Not a Restaurant Account",
+          description: "This email is not registered as a restaurant. Use Customer Login for regular accounts.",
           variant: "destructive",
         });
-        navigate('/register-restaurant');
         return;
       }
 
+      // Proceed with restaurant owner login
+      await signIn(email, password);
       toast({
         title: "Welcome back!",
         description: "Successfully logged in to your restaurant dashboard",
