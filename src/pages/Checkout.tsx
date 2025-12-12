@@ -126,20 +126,16 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items only for valid UUID-based menu items
-      const orderItems = cart
-        .filter(item => isUuid(String(item.id)))
-        .map(item => ({
-          order_id: order.id,
-          menu_item_id: item.id,
-          menu_item_name: item.name,
-          quantity: item.quantity,
-          price: Number(item.price),
-          is_veg: (item as any).isVeg || false,
-        }));
+      // Create order items for orders table (uses order_items, not restaurant_order_items)
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        product_id: String(item.id),
+        quantity: item.quantity,
+        price: Number(item.price),
+      }));
 
       if (orderItems.length > 0) {
-        await supabase.from('restaurant_order_items').insert(orderItems);
+        await supabase.from('order_items').insert(orderItems);
       }
 
       // Create initial order status history
@@ -268,21 +264,17 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items only for valid UUID-based menu items
-      const orderItems = cart
-        .filter(item => isUuid(String(item.id)))
-        .map(item => ({
-          order_id: order.id,
-          menu_item_id: item.id,
-          menu_item_name: item.name,
-          quantity: item.quantity,
-          price: Number(item.price),
-          is_veg: (item as any).isVeg || false,
-        }));
+      // Create order items for orders table (uses order_items, not restaurant_order_items)
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        product_id: String(item.id),
+        quantity: item.quantity,
+        price: Number(item.price),
+      }));
 
       if (orderItems.length > 0) {
         const { error: itemsError } = await supabase
-          .from('restaurant_order_items')
+          .from('order_items')
           .insert(orderItems);
 
         if (itemsError) throw itemsError;
