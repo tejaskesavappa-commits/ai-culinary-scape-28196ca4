@@ -62,16 +62,18 @@ export const RestaurantOrderCart: React.FC<RestaurantOrderCartProps> = ({ restau
 
     setIsSubmitting(true);
     try {
-      // Create order in database
+      // Create restaurant order in database (uses restaurant_orders table)
       const { data: order, error: orderError } = await supabase
-        .from('orders')
+        .from('restaurant_orders')
         .insert({
           user_id: user!.id,
+          restaurant_id: restaurantId,
           total_amount: cartTotal,
           status: 'pending',
           payment_method: 'upi',
           payment_status: 'pending',
-          phone: phone.trim(),
+          customer_phone: phone.trim(),
+          customer_name: profile?.full_name || user!.email?.split('@')[0] || 'Customer',
           delivery_address: address.trim(),
           notes: notes.trim() || null,
         })
@@ -80,13 +82,11 @@ export const RestaurantOrderCart: React.FC<RestaurantOrderCartProps> = ({ restau
 
       if (orderError) throw orderError;
 
-      // Create restaurant order items (separate table for restaurant menu items)
+      // Create restaurant order items
       const orderItems = restaurantCart.map(item => ({
         order_id: order.id,
         menu_item_id: item.id,
         menu_item_name: item.name,
-        restaurant_id: item.restaurantId,
-        restaurant_name: item.restaurantName,
         quantity: item.quantity,
         price: item.price,
         is_veg: item.isVeg || false,
@@ -97,15 +97,6 @@ export const RestaurantOrderCart: React.FC<RestaurantOrderCartProps> = ({ restau
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
-
-      // Create initial order status history
-      await supabase
-        .from('order_status_history')
-        .insert({
-          order_id: order.id,
-          status: 'pending',
-          notes: `Order placed from ${restaurantName}`,
-        });
 
       setOrderId(order.id);
       setStep('payment');
