@@ -163,6 +163,67 @@ const Restaurant: React.FC = () => {
     };
   }, [id]);
 
+  // All hooks must be called before any early returns
+  const categories = useMemo(() => {
+    if (!restaurant) return ['All'];
+    return ['All', ...Array.from(new Set(restaurant.menu.map(item => item.category)))];
+  }, [restaurant]);
+  
+  // Get suggested items based on cart contents (same category items)
+  const suggestedItems = useMemo(() => {
+    if (!restaurant) return [];
+    
+    const cartCategories = cart.items
+      .filter(item => item.restaurantId === restaurant.id)
+      .map(item => item.category);
+    
+    if (cartCategories.length === 0) {
+      // If cart is empty, show popular items (first 3 items from different categories)
+      return restaurant.menu.slice(0, 6);
+    }
+    
+    // Show items from same categories not in cart
+    const cartItemIds = cart.items.map(item => item.id);
+    const suggested = restaurant.menu
+      .filter(item => cartCategories.includes(item.category) && !cartItemIds.includes(item.id))
+      .slice(0, 4);
+    
+    return suggested.length > 0 ? suggested : restaurant.menu.slice(0, 4);
+  }, [cart.items, restaurant]);
+
+  // Filter menu based on veg/non-veg selection and category
+  const filteredMenu = useMemo(() => {
+    if (!restaurant) return [];
+    
+    let filtered = restaurant.menu;
+    
+    // Apply veg/non-veg filter
+    if (vegOnly && !nonVegOnly) {
+      filtered = filtered.filter(item => item.isVeg === true);
+    } else if (nonVegOnly && !vegOnly) {
+      filtered = filtered.filter(item => item.isVeg === false || item.isAlcoholic);
+    }
+    
+    // Apply category filter
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(item => item.category === selectedCategory);
+    }
+    
+    return filtered;
+  }, [restaurant, vegOnly, nonVegOnly, selectedCategory]);
+
+  // Mark some items as popular/new (first few items in each category)
+  const popularIds = useMemo(() => {
+    if (!restaurant) return [];
+    return restaurant.menu.slice(0, 3).map(i => i.id);
+  }, [restaurant]);
+  
+  const newIds = useMemo(() => {
+    if (!restaurant) return [];
+    return restaurant.menu.slice(-3).map(i => i.id);
+  }, [restaurant]);
+
+  // Early returns AFTER all hooks
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -181,52 +242,6 @@ const Restaurant: React.FC = () => {
       </div>
     );
   }
-
-  const categories = ['All', ...Array.from(new Set(restaurant.menu.map(item => item.category)))];
-  
-  // Get suggested items based on cart contents (same category items)
-  const suggestedItems = useMemo(() => {
-    const cartCategories = cart.items
-      .filter(item => item.restaurantId === restaurant.id)
-      .map(item => item.category);
-    
-    if (cartCategories.length === 0) {
-      // If cart is empty, show popular items (first 3 items from different categories)
-      const popular = restaurant.menu.slice(0, 6);
-      return popular;
-    }
-    
-    // Show items from same categories not in cart
-    const cartItemIds = cart.items.map(item => item.id);
-    const suggested = restaurant.menu
-      .filter(item => cartCategories.includes(item.category) && !cartItemIds.includes(item.id))
-      .slice(0, 4);
-    
-    return suggested.length > 0 ? suggested : restaurant.menu.slice(0, 4);
-  }, [cart.items, restaurant]);
-
-  // Filter menu based on veg/non-veg selection and category
-  const filteredMenu = useMemo(() => {
-    let filtered = restaurant.menu;
-    
-    // Apply veg/non-veg filter
-    if (vegOnly && !nonVegOnly) {
-      filtered = filtered.filter(item => item.isVeg === true);
-    } else if (nonVegOnly && !vegOnly) {
-      filtered = filtered.filter(item => item.isVeg === false || item.isAlcoholic);
-    }
-    
-    // Apply category filter
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(item => item.category === selectedCategory);
-    }
-    
-    return filtered;
-  }, [restaurant.menu, vegOnly, nonVegOnly, selectedCategory]);
-
-  // Mark some items as popular/new (first few items in each category)
-  const popularIds = restaurant.menu.slice(0, 3).map(i => i.id);
-  const newIds = restaurant.menu.slice(-3).map(i => i.id);
 
   return (
     <div className="min-h-screen bg-background pb-24">
