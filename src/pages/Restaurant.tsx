@@ -1,21 +1,140 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Star, Clock, MapPin, Sparkles, Leaf } from 'lucide-react';
-import { restaurants } from '../data/restaurants';
+import { Star, Clock, MapPin, Sparkles, Leaf, Store, Loader2 } from 'lucide-react';
+import { restaurants as staticRestaurants } from '../data/restaurants';
 import { MenuItemCard } from '../components/MenuItemCard';
 import { RestaurantOrderCart } from '../components/RestaurantOrderCart';
 import { Button } from '../components/ui/button';
-import { Switch } from '../components/ui/switch';
-import { Badge } from '../components/ui/badge';
 import { useCart } from '../contexts/CartContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  isVeg?: boolean;
+  isAlcoholic?: boolean;
+}
+
+interface RestaurantData {
+  id: string;
+  name: string;
+  cuisine: string;
+  rating: number;
+  deliveryTime: string;
+  image: string;
+  description: string;
+  menu: MenuItem[];
+}
 
 const Restaurant: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const restaurant = restaurants.find(r => r.id === id);
+  const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [vegOnly, setVegOnly] = useState(false);
   const [nonVegOnly, setNonVegOnly] = useState(false);
   const { cart } = useCart();
+
+  useEffect(() => {
+    const fetchRestaurant = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      
+      // First check static restaurants
+      const staticRestaurant = staticRestaurants.find(r => r.id === id);
+      if (staticRestaurant) {
+        setRestaurant({
+          id: staticRestaurant.id,
+          name: staticRestaurant.name,
+          cuisine: staticRestaurant.cuisine,
+          rating: staticRestaurant.rating,
+          deliveryTime: staticRestaurant.deliveryTime,
+          image: staticRestaurant.image,
+          description: staticRestaurant.description,
+          menu: staticRestaurant.menu.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            price: item.price,
+            image: item.image || '',
+            category: item.category,
+            isVeg: item.isVeg,
+            isAlcoholic: item.isAlcoholic
+          }))
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // Otherwise fetch from Supabase
+      try {
+        const { data: restaurantData, error: restaurantError } = await supabase
+          .from('restaurants')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (restaurantError) throw restaurantError;
+        
+        if (!restaurantData) {
+          setRestaurant(null);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch menu items for this restaurant
+        const { data: menuItems, error: menuError } = await supabase
+          .from('menu_items')
+          .select('*')
+          .eq('restaurant_id', id)
+          .eq('is_available', true);
+        
+        if (menuError) throw menuError;
+        
+        setRestaurant({
+          id: restaurantData.id,
+          name: restaurantData.name,
+          cuisine: restaurantData.cuisine_type,
+          rating: restaurantData.rating || 4.0,
+          deliveryTime: restaurantData.avg_delivery_time,
+          image: restaurantData.image_url || '',
+          description: restaurantData.description,
+          menu: (menuItems || []).map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            price: item.price,
+            image: item.image_url || '',
+            category: item.category,
+            isVeg: item.is_veg ?? true,
+            isAlcoholic: item.is_alcoholic ?? false
+          }))
+        });
+      } catch (error: any) {
+        console.error('Error fetching restaurant:', error);
+        toast.error('Failed to load restaurant');
+        setRestaurant(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRestaurant();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!restaurant) {
     return (
@@ -78,11 +197,17 @@ const Restaurant: React.FC = () => {
     <div className="min-h-screen bg-background pb-24">
       {/* Restaurant Header */}
       <div className="relative h-64 md:h-80 overflow-hidden">
-        <img
-          src={restaurant.image}
-          alt={restaurant.name}
-          className="w-full h-full object-cover"
-        />
+        {restaurant.image ? (
+          <img
+            src={restaurant.image}
+            alt={restaurant.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+            <Store className="h-24 w-24 text-primary/50" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
         
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
