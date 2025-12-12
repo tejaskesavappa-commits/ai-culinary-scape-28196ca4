@@ -87,15 +87,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Clean and validate phone number (remove +91 or any prefix, keep only digits)
     let cleanPhone = phone.replace(/\D/g, "");
-    // Remove country code if present
-    if (cleanPhone.startsWith("91") && cleanPhone.length === 12) {
+    
+    // Remove country code "91" if present at the start
+    if (cleanPhone.startsWith("91") && cleanPhone.length > 10) {
       cleanPhone = cleanPhone.substring(2);
     }
     
-    if (cleanPhone.length !== 10) {
+    // Remove leading "0" if present (STD format)
+    if (cleanPhone.startsWith("0") && cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    
+    // If still more than 10 digits, take the last 10 (handles cases like 9165580338)
+    if (cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.slice(-10);
+    }
+    
+    // Validate: must be exactly 10 digits starting with 6, 7, 8, or 9
+    if (cleanPhone.length !== 10 || !/^[6-9]/.test(cleanPhone)) {
       console.error("Invalid phone number:", phone, "-> cleaned:", cleanPhone);
       return new Response(
-        JSON.stringify({ error: "Invalid phone number. Must be 10 digits." }),
+        JSON.stringify({ error: "Invalid phone number. Must be 10 digits starting with 6, 7, 8, or 9." }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
