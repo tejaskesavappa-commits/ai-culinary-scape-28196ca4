@@ -145,41 +145,43 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Newly Approved Restaurants */}
+      {/* Newly Approved Restaurants - Now orderable */}
       {approvedRestaurants.length > 0 && (
         <section className="py-16 px-4 bg-muted/30">
           <div className="container mx-auto">
             <div className="text-center mb-12">
               <Badge className="mb-4 bg-secondary text-secondary-foreground">New Partners</Badge>
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Recently Joined Restaurants
+                New on FOODIEXPRESS
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                These restaurants just partnered with us and will be serving delicious food soon!
+                These restaurants just joined us - order now and try their delicious food!
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {approvedRestaurants.map((restaurant) => (
-                <Card key={restaurant.id} className="overflow-hidden border-border hover:shadow-lg transition-shadow">
-                  <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                    <Store className="h-16 w-16 text-primary/50" />
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-bold text-lg">{restaurant.name}</h3>
-                      <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                <Link key={restaurant.id} to={`/restaurant/${restaurant.id}`}>
+                  <Card className="overflow-hidden border-border hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer">
+                    <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                      <Store className="h-16 w-16 text-primary/50" />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {restaurant.description}
-                    </p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="capitalize">{restaurant.cuisine_type}</span>
-                      <span>•</span>
-                      <span>{restaurant.avg_delivery_time}</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-bold text-lg">{restaurant.name}</h3>
+                        <Badge className="text-xs bg-primary text-primary-foreground">New</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {restaurant.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="capitalize">{restaurant.cuisine_type}</span>
+                        <span>•</span>
+                        <span>{restaurant.avg_delivery_time}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>
